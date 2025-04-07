@@ -14,10 +14,8 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, Flatten, Dropout, GlobalAveragePooling2D
 import tensorflow as tf
-import streamlit as st
 import joblib
-import matplotlib.cm as cm
-import seaborn as sns
+import argparse
 
 # Constants
 IMG_HEIGHT = 224
@@ -453,8 +451,7 @@ class FakeCurrencyDetector:
         if self.feature_type in ['cnn', 'hybrid']:
             self.cnn_model = tf.keras.models.load_model(os.path.join(model_dir, "cnn_feature_extractor.h5"))
 
-
-def train_and_evaluate():
+def train_and_evaluate(feature_type='hybrid', classifier_type='svm', cnn_model='resnet50'):
     """Train and evaluate the model"""
     # Paths
     train_dir = "Dataset/Training"
@@ -462,7 +459,11 @@ def train_and_evaluate():
     test_dir = "Dataset/Testing"
     
     # Initialize detector
-    detector = FakeCurrencyDetector(feature_type='hybrid', classifier_type='svm', cnn_model='resnet50')
+    detector = FakeCurrencyDetector(
+        feature_type=feature_type, 
+        classifier_type=classifier_type, 
+        cnn_model=cnn_model
+    )
     
     # Train
     print("Training model...")
@@ -482,117 +483,32 @@ def train_and_evaluate():
     
     return detector
 
+# Streamlit app code moved to app.py
 
-# Streamlit App
-def create_streamlit_app():
-    st.set_page_config(page_title="Fake Currency Detector", layout="wide")
-    
-    st.title("Fake Currency Detection System")
-    st.write("Upload an image of currency to determine if it's real or counterfeit.")
-    
-    # Sidebar for model selection
-    st.sidebar.title("Model Configuration")
-    feature_type = st.sidebar.selectbox(
-        "Feature Extraction Method",
-        ["cnn", "sift", "hybrid"],
-        format_func=lambda x: {
-            "cnn": "CNN Features",
-            "sift": "SIFT Features",
-            "hybrid": "Hybrid (CNN + SIFT)"
-        }.get(x, x)
-    )
-    
-    classifier_type = st.sidebar.selectbox(
-        "Classifier",
-        ["svm", "rf", "lr", "nn"],
-        format_func=lambda x: {
-            "svm": "Support Vector Machine (RBF)",
-            "rf": "Random Forest",
-            "lr": "Logistic Regression",
-            "nn": "Neural Network"
-        }.get(x, x)
-    )
-    
-    cnn_model = st.sidebar.selectbox(
-        "CNN Model (for CNN features)",
-        ["resnet50", "vgg16"],
-        format_func=lambda x: {
-            "resnet50": "ResNet50",
-            "vgg16": "VGG16"
-        }.get(x, x)
-    )
-    
-    # File uploader
-    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-    
-    # Load or train model
-    model_dir = "models"
-    if not os.path.exists(os.path.join(model_dir, "classifier.joblib")) and not os.path.exists(os.path.join(model_dir, "nn_classifier.h5")):
-        if st.button("Train Model"):
-            with st.spinner("Training model... This may take a while."):
-                detector = train_and_evaluate()
-                st.success("Model trained and saved successfully!")
-        else:
-            st.warning("Model not found. Please train the model first.")
-            return
-    else:
-        detector = FakeCurrencyDetector(
-            feature_type=feature_type,
-            classifier_type=classifier_type,
-            cnn_model=cnn_model
-        )
-        with st.spinner("Loading model..."):
-            detector.load_model(model_dir)
-            st.success("Model loaded successfully!")
-    
-    if uploaded_file is not None:
-        # Save uploaded file temporarily
-        with open("temp_img.jpg", "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        
-        # Make prediction
-        result, confidence = detector.predict("temp_img.jpg")
-        
-        # Display result
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.image(uploaded_file, caption="Uploaded Image", width=300)
-            
-            # Display prediction with confidence
-            st.subheader("Prediction")
-            result_color = "green" if result == "Real" else "red"
-            st.markdown(f"<h3 style='color: {result_color};'>{result} Currency</h3>", unsafe_allow_html=True)
-            st.write(f"Confidence: {confidence*100:.2f}%")
-        
-        with col2:
-            # Generate and display Grad-CAM
-            if feature_type in ['cnn', 'hybrid']:
-                try:
-                    st.subheader("Visualization (Grad-CAM)")
-                    superimposed_img, _ = detector.generate_gradcam("temp_img.jpg")
-                    st.image(superimposed_img, caption="Regions Influencing Prediction", width=300)
-                except Exception as e:
-                    st.error(f"Could not generate Grad-CAM visualization: {e}")
-            else:
-                st.info("Grad-CAM visualization only available with CNN-based models")
-        
-        # Display SIFT features if used
-        if feature_type in ['sift', 'hybrid']:
-            st.subheader("SIFT Keypoints")
-            img = cv2.imread("temp_img.jpg")
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            sift = cv2.SIFT_create()
-            keypoints, _ = sift.detectAndCompute(gray, None)
-            img_with_keypoints = cv2.drawKeypoints(gray, keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-            st.image(img_with_keypoints, caption="SIFT Keypoints", width=300)
-        
-        # Clean up
-        os.remove("temp_img.jpg")
-
-
-# Main function
 if __name__ == "__main__":
-    # Run Streamlit app
-    create_streamlit_app()
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Fake Currency Detection System')
+    parser.add_argument('--train', action='store_true', help='Train the model')
+    parser.add_argument('--feature-type', type=str, default='hybrid', 
+                      choices=['cnn', 'sift', 'hybrid'], help='Feature extraction method')
+    parser.add_argument('--classifier', type=str, default='svm',
+                      choices=['svm', 'rf', 'lr', 'nn'], help='Classifier type')
+    parser.add_argument('--cnn-model', type=str, default='resnet50',
+                      choices=['resnet50', 'vgg16'], help='CNN model for feature extraction')
+    
+    args = parser.parse_args()
+    
+    if args.train:
+        # Only run the training function when explicitly requested
+        print("Training model with settings:")
+        print(f"- Feature type: {args.feature_type}")
+        print(f"- Classifier: {args.classifier}")
+        print(f"- CNN model: {args.cnn_model}")
+        
+        train_and_evaluate(
+            feature_type=args.feature_type,
+            classifier_type=args.classifier,
+            cnn_model=args.cnn_model
+        )
+    else:
+        print("No action specified. Use --train to train the model or run 'streamlit run app.py' to launch the web interface.")
