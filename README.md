@@ -71,13 +71,7 @@ pip install -r requirements.txt
 
 ## Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/fake-currency-detection.git
-   cd fake-currency-detection
-   ```
-
-2. Install dependencies:
+1. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
