@@ -71,7 +71,7 @@ The program functions in the following way:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/FakeCurrencyDetectionSystem.git
+git clone https://github.com/Cranes-dead/FakeCurrencyDetector.git
 
 # Navigate to the project directory
 cd FakeCurrencyDetectionSystem
@@ -116,7 +116,7 @@ python main.py --train --feature-type hybrid --classifier svm --cnn-model mobile
   - `vgg16`: VGG16
 
 ## :heart: Owner
-Made with :heart:&nbsp;  by [Viram Jain](https://github.com/viram-jain)
+Made with :heart:&nbsp;  by [Viram Jain](https://github.com/Cranes-dead)
 
 ## :page_with_curl: License
 This project is licensed under the MIT License - see the LICENSE file for details.
