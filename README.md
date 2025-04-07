@@ -116,7 +116,7 @@ python main.py --train --feature-type hybrid --classifier svm --cnn-model mobile
   - `vgg16`: VGG16
 
 ## :heart: Owner
-Made with :heart:&nbsp;  by [Viram Jain](https://github.com/Cranes-dead)
+Made with :heart:&nbsp;  by [Aditya Narayan](https://github.com/Cranes-dead)
 
 ## :page_with_curl: License
 This project is licensed under the MIT License - see the LICENSE file for details.
